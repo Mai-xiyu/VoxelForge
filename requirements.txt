@@ -32,3 +32,7 @@ pyyaml>=6.0
 # pytest>=7.4
 # pytest-qt>=4.2
 # ruff>=0.1
+
+# 打包
+imageio>=2.32.2
+cmake>=4.2.1
