@@ -40,6 +40,10 @@ dependencies = [
     # === 实用工具 ===
     "psutil>=5.9",
     "pyyaml>=6.0",
+
+    # === 构建工具 ===
+    "cmake>=4.0",
+    "imageio>=2.31",
 ]
 
 [project.optional-dependencies]
