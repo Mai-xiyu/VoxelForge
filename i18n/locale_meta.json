@@ -1,0 +1,7 @@
+{
+  "zh_CN": {"name": "Simplified Chinese", "native": "简体中文",  "flag": "🇨🇳", "direction": "ltr"},
+  "en_US": {"name": "English",            "native": "English",   "flag": "🇺🇸", "direction": "ltr"},
+  "ja_JP": {"name": "Japanese",           "native": "日本語",    "flag": "🇯🇵", "direction": "ltr"},
+  "ko_KR": {"name": "Korean",             "native": "한국어",    "flag": "🇰🇷", "direction": "ltr"},
+  "ru_RU": {"name": "Russian",            "native": "Русский",   "flag": "🇷🇺", "direction": "ltr"}
+}

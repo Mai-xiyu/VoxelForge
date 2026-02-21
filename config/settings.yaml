@@ -1,0 +1,56 @@
+# VoxelForge 全局配置
+app:
+  name: VoxelForge
+  version: 0.1.0
+
+# 语言设置 (zh_CN | en_US | ja_JP | ko_KR | ru_RU)
+language: auto  # auto = 跟随系统语言
+
+# GPU / 计算资源策略
+compute:
+  # 优先后端: cuda > vulkan > opengl > cpu
+  preferred_backend: auto
+  # GPU 显存占用上限 (百分比, 0-100)
+  gpu_memory_limit_pct: 80
+  # CPU 最少保留核心数 (留给系统)
+  cpu_reserved_cores: 2
+  # 系统 RAM 占用告警阈值
+  ram_warning_pct: 90
+  # 体素化分块大小 (每次 GPU 处理的体素子网格边长)
+  chunk_batch_size: 256
+
+# 体素化默认参数
+voxelizer:
+  # 默认模式: surface | solid
+  default_mode: solid
+  # 默认目标高度 (方块数)
+  default_height: 128
+  # BVH 叶节点最大三角面数
+  bvh_leaf_size: 8
+
+# 颜色映射
+block_mapper:
+  # 色彩空间: lab | rgb
+  color_space: lab
+  # 是否启用 Floyd-Steinberg 抖动
+  dithering: true
+  # 默认方块类别白名单 (空 = 全部启用)
+  enabled_categories: []
+
+# Minecraft 输出
+minecraft:
+  # 目标版本 (影响 Block States 格式)
+  target_version: "1.21"
+  # 默认输出格式: litematic | schematic | mca
+  default_format: litematic
+  # 安全限高
+  safe_height_limit: 320
+  # 绝对限高
+  absolute_height_limit: 384
+
+# GUI
+gui:
+  theme: dark
+  viewport_fps_cap: 60
+  show_grid: true
+  show_axes: true

@@ -1,0 +1,296 @@
+# ───────────────────────────────────────────────────────────
+# VoxelForge — 多平台发布 (Nuitka)
+#
+# 触发: 推送 v* tag 或手动 workflow_dispatch
+# 产物: Windows .exe / macOS .app(.dmg) / Linux AppImage + .deb
+# ───────────────────────────────────────────────────────────
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.2.0)"
+        required: false
+        default: "0.0.0-dev"
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_VERSION: "3.11"
+  APP_NAME: VoxelForge
+  ENTRY: main.py
+
+jobs:
+  # ── Windows ─────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install nuitka ordered-set zstandard
+
+      - name: Build with Nuitka
+        run: |
+          python -m nuitka ^
+            --standalone ^
+            --onefile ^
+            --enable-plugin=pyside6 ^
+            --windows-icon-from-ico=gui/resources/icons/favicon.ico ^
+            --windows-company-name=VoxelForge ^
+            --windows-product-name=VoxelForge ^
+            --windows-file-version=0.1.0.0 ^
+            --windows-product-version=0.1.0.0 ^
+            --include-data-dir=config=config ^
+            --include-data-dir=i18n/locales=i18n/locales ^
+            --include-data-dir=gui/resources=gui/resources ^
+            --include-data-dir=gui/web=gui/web ^
+            --include-data-dir=gui/web_panels/html=gui/web_panels/html ^
+            --include-data-dir=gui/web_panels/js=gui/web_panels/js ^
+            --output-filename=VoxelForge.exe ^
+            --output-dir=dist ^
+            ${{ env.ENTRY }}
+        shell: cmd
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelForge-Windows-x64
+          path: dist/VoxelForge.exe
+          retention-days: 30
+
+  # ── macOS ───────────────────────────────────────────────
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install nuitka ordered-set
+
+      - name: Build with Nuitka
+        run: |
+          python -m nuitka \
+            --standalone \
+            --macos-create-app-bundle \
+            --macos-app-icon=gui/resources/icons/logo.png \
+            --macos-app-name=VoxelForge \
+            --enable-plugin=pyside6 \
+            --include-data-dir=config=config \
+            --include-data-dir=i18n/locales=i18n/locales \
+            --include-data-dir=gui/resources=gui/resources \
+            --include-data-dir=gui/web=gui/web \
+            --include-data-dir=gui/web_panels/html=gui/web_panels/html \
+            --include-data-dir=gui/web_panels/js=gui/web_panels/js \
+            --output-dir=dist \
+            ${{ env.ENTRY }}
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg || true
+          create-dmg \
+            --volname "VoxelForge" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --app-drop-link 450 185 \
+            dist/VoxelForge.dmg \
+            dist/main.app/ 2>/dev/null || \
+          hdiutil create -volname VoxelForge -srcfolder dist/main.app -ov -format UDZO dist/VoxelForge.dmg
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelForge-macOS
+          path: dist/VoxelForge.dmg
+          retention-days: 30
+
+  # ── Linux ───────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            patchelf ccache libfuse2 \
+            libxcb-xinerama0 libxkbcommon-x11-0 \
+            libgl1-mesa-glx libegl1 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 \
+            libxcb-shape0 libxcb-render-util0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install nuitka ordered-set
+
+      - name: Build with Nuitka (standalone)
+        run: |
+          python -m nuitka \
+            --standalone \
+            --enable-plugin=pyside6 \
+            --linux-icon=gui/resources/icons/logo.png \
+            --include-data-dir=config=config \
+            --include-data-dir=i18n/locales=i18n/locales \
+            --include-data-dir=gui/resources=gui/resources \
+            --include-data-dir=gui/web=gui/web \
+            --include-data-dir=gui/web_panels/html=gui/web_panels/html \
+            --include-data-dir=gui/web_panels/js=gui/web_panels/js \
+            --output-dir=dist \
+            ${{ env.ENTRY }}
+
+      - name: Create AppImage
+        run: |
+          # 下载 appimagetool
+          wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool
+          chmod +x appimagetool
+
+          # 组装 AppDir
+          mkdir -p AppDir/usr/bin AppDir/usr/share/icons/hicolor/256x256/apps AppDir/usr/share/applications
+
+          cp -r dist/main.dist/* AppDir/usr/bin/
+          cp gui/resources/icons/logo.png AppDir/usr/share/icons/hicolor/256x256/apps/voxelforge.png
+          cp gui/resources/icons/logo.png AppDir/voxelforge.png
+          cp packaging/voxelforge.desktop AppDir/voxelforge.desktop
+          cp packaging/voxelforge.desktop AppDir/usr/share/applications/voxelforge.desktop
+
+          # AppRun
+          cat > AppDir/AppRun << 'APPRUN'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/main" "$@"
+          APPRUN
+          chmod +x AppDir/AppRun
+
+          ARCH=x86_64 ./appimagetool AppDir dist/VoxelForge-x86_64.AppImage
+
+      - name: Create .deb package
+        run: |
+          DEB_ROOT=deb_pkg
+          mkdir -p $DEB_ROOT/DEBIAN
+          mkdir -p $DEB_ROOT/usr/bin
+          mkdir -p $DEB_ROOT/usr/share/applications
+          mkdir -p $DEB_ROOT/usr/share/icons/hicolor/256x256/apps
+          mkdir -p $DEB_ROOT/opt/voxelforge
+
+          # 复制构建产物
+          cp -r dist/main.dist/* $DEB_ROOT/opt/voxelforge/
+
+          # 启动脚本
+          cat > $DEB_ROOT/usr/bin/voxelforge << 'LAUNCHER'
+          #!/bin/bash
+          exec /opt/voxelforge/main "$@"
+          LAUNCHER
+          chmod +x $DEB_ROOT/usr/bin/voxelforge
+
+          # Desktop 文件
+          cp packaging/voxelforge.desktop $DEB_ROOT/usr/share/applications/
+          cp gui/resources/icons/logo.png $DEB_ROOT/usr/share/icons/hicolor/256x256/apps/voxelforge.png
+
+          # Control 文件
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          [ -z "$VERSION" ] && VERSION="0.1.0"
+
+          cat > $DEB_ROOT/DEBIAN/control << EOF
+          Package: voxelforge
+          Version: ${VERSION}
+          Section: graphics
+          Priority: optional
+          Architecture: amd64
+          Depends: libgl1, libegl1
+          Maintainer: VoxelForge Team <noreply@voxelforge.dev>
+          Description: 3D data to Minecraft block converter
+           VoxelForge converts 3D models, city/GIS data, and point clouds
+           into Minecraft chunk files (.mca), schematic files (.schem),
+           and Litematica projections (.litematic).
+          EOF
+
+          dpkg-deb --build $DEB_ROOT dist/voxelforge_${VERSION}_amd64.deb
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelForge-Linux-AppImage
+          path: dist/VoxelForge-x86_64.AppImage
+          retention-days: 30
+
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelForge-Linux-deb
+          path: dist/voxelforge_*.deb
+          retention-days: 30
+
+  # ── GitHub Release ──────────────────────────────────────
+  release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: find artifacts -type f | head -30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "VoxelForge ${{ github.ref_name }}"
+          body: |
+            ## VoxelForge ${{ github.ref_name }}
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | Windows x64 | `VoxelForge.exe` |
+            | macOS | `VoxelForge.dmg` |
+            | Linux AppImage | `VoxelForge-x86_64.AppImage` |
+            | Linux .deb (Ubuntu/Debian) | `voxelforge_*_amd64.deb` |
+
+            ### What's included
+            - 3 conversion pipelines (3D Model / City-GIS / Point Cloud)
+            - GPU acceleration via Taichi (CUDA/Vulkan/OpenGL/CPU)
+            - Output: .litematic, .schem, .mca for Minecraft 1.20+
+            - 5 language UI (zh-CN, en, ja, ko, es)
+          files: |
+            artifacts/VoxelForge-Windows-x64/VoxelForge.exe
+            artifacts/VoxelForge-macOS/VoxelForge.dmg
+            artifacts/VoxelForge-Linux-AppImage/VoxelForge-x86_64.AppImage
+            artifacts/VoxelForge-Linux-deb/voxelforge_*.deb
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

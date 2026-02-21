@@ -1,0 +1,55 @@
+# ───── Python ─────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+*.spec
+*.manifest
+
+# ───── Nuitka ─────
+main.build/
+main.dist/
+main.onefile-build/
+*.exe
+*.app/
+*.dmg
+*.AppImage
+*.deb
+
+# ───── IDE / Editor ─────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ───── Env ─────
+.env
+.venv/
+venv/
+env/
+
+# ───── Taichi ─────
+_ti_kernels/
+*.ti
+
+# ───── Logs ─────
+*.log
+logs/
+
+# ───── Test / Coverage ─────
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ───── OS ─────
+Desktop.ini
+ehthumbs.db
