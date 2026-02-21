@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxelForge Info Panel</title>
+    <link rel="icon" type="image/x-icon" href="../resources/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="../resources/icons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../resources/icons/favicon-32x32.png">
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <style>
+        :root {
+            --bg-base: #1e1e2e;
+            --bg-surface: #181825;
+            --bg-overlay: #11111b;
+            --text-primary: #cdd6f4;
+            --text-secondary: #a6adc8;
+            --text-muted: #6c7086;
+            --accent-blue: #89b4fa;
+            --accent-green: #a6e3a1;
+            --accent-yellow: #f9e2af;
+            --accent-red: #f38ba8;
+            --accent-teal: #94e2d5;
+            --border: #313244;
+            --border-light: #45475a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-teal);
+            margin-top: 24px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-overlay);
+            border-radius: 8px;
+        }
+
+        .pipeline-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-label { color: var(--text-secondary); font-size: 13px; }
+        .stat-value { color: var(--text-primary); font-weight: 600; font-size: 13px; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-blue { background: rgba(137,180,250,0.15); color: var(--accent-blue); }
+        .badge-green { background: rgba(166,227,161,0.15); color: var(--accent-green); }
+        .badge-yellow { background: rgba(249,226,175,0.15); color: var(--accent-yellow); }
+
+        .format-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .format-tag {
+            background: var(--bg-overlay);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tips {
+            background: rgba(249,226,175,0.08);
+            border-left: 3px solid var(--accent-yellow);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 16px;
+        }
+
+        .tips-title {
+            color: var(--accent-yellow);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .tips p {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        #status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border);
+            padding: 8px 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        ul { padding-left: 20px; }
+        li { color: var(--text-secondary); font-size: 13px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <h1>⚒ VoxelForge</h1>
+    <p class="subtitle" id="subtitle">3D 数据 → Minecraft 方块转换器</p>
+
+    <h2>🎯 三条转换管线</h2>
+    <div class="pipeline-grid">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🎨</div>
+                <div>
+                    <h3>管线 A: 3D 模型</h3>
+                    <span class="badge badge-blue">OBJ / FBX / GLTF / PLY / STL</span>
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px;">
+                导入 3D 模型文件，自动修复网格、GPU 加速体素化、
+                CIE L*a*b* 颜色映射 + Floyd-Steinberg 抖动。
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🏙️</div>
+                <div>
+                    <h3>管线 B: 城市 / GIS</h3>
+                    <span class="badge badge-green">高度图 / GeoJSON / OSM</span>
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px;">
+                导入高度图和建筑数据，自动生成地形、水体、建筑体素。
+                支持 GeoJSON footprint 拉伸。
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📡</div>
+                <div>
+                    <h3>管线 C: 点云 / 3DGS</h3>
+                    <span class="badge badge-yellow">PLY / PCD / 3D Gaussian Splatting</span>
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px;">
+                导入扫描点云或 3DGS .ply，离群点剔除，可选 Poisson 重建或
+                直接体素化。支持 SH 球谐系数颜色提取。
+            </p>
+        </div>
+    </div>
+
+    <h2>📦 输出格式</h2>
+    <div class="card">
+        <div class="format-list">
+            <span class="format-tag">📐 .litematic (Litematica)</span>
+            <span class="format-tag">🧱 .schem (Sponge Schematic)</span>
+            <span class="format-tag">🗺️ .mca (Anvil Region)</span>
+        </div>
+        <div style="margin-top: 12px;">
+            <div class="stat-row">
+                <span class="stat-label">目标版本</span>
+                <span class="stat-value">Minecraft 1.20+</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">最大高度</span>
+                <span class="stat-value">-64 ～ 319 (384 格)</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">方块调色板</span>
+                <span class="stat-value">~150 种方块 × 9 类别</span>
+            </div>
+        </div>
+    </div>
+
+    <h2>⚡ GPU 加速</h2>
+    <div class="card">
+        <div class="stat-row">
+            <span class="stat-label">框架</span>
+            <span class="stat-value">Taichi Lang</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">支持后端</span>
+            <span class="stat-value">CUDA / Vulkan / OpenGL / CPU</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">GPU 内存限制</span>
+            <span class="stat-value" id="gpu-limit">≤ 80%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">CPU 保留</span>
+            <span class="stat-value">2 核心</span>
+        </div>
+    </div>
+
+    <h2>🔧 使用流程</h2>
+    <div class="card">
+        <ol style="padding-left: 20px;">
+            <li style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                在左侧面板选择对应的管线 (3D模型 / 城市 / 点云)
+            </li>
+            <li style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                选择输入文件并调整参数
+            </li>
+            <li style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                点击 "开始转换"，在 3D 视口预览结果
+            </li>
+            <li style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                选择输出路径和格式，等待导出完成
+            </li>
+            <li style="color: var(--text-secondary); font-size: 13px;">
+                在 Minecraft 中使用 Litematica / WorldEdit 导入
+            </li>
+        </ol>
+    </div>
+
+    <div class="tips">
+        <div class="tips-title">💡 提示</div>
+        <p>
+            建议先使用较低的目标高度 (如 64) 快速预览，确认效果后再使用高分辨率。
+            网格面数超过 50 万时建议开启 "简化网格" 选项。
+            Floyd-Steinberg 抖动可提升颜色过渡效果，但会增加处理时间。
+        </p>
+    </div>
+
+    <div id="status-bar">
+        <span id="status-text">就绪</span>
+        <span id="version">VoxelForge v0.1.0</span>
+    </div>
+
+    <script>
+        // QWebChannel 通信
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof QWebChannel !== 'undefined') {
+                new QWebChannel(qt.webChannelTransport, function(channel) {
+                    var i18n = channel.objects.i18n;
+                    if (i18n) {
+                        // 可以通过 i18n 获取翻译
+                        console.log('i18n bridge connected');
+                    }
+                });
+            }
+        });
+
+        // 暴露给 Python 的状态更新接口
+        function updateStatus(text) {
+            document.getElementById('status-text').textContent = text;
+        }
+
+        function updateGpuLimit(pct) {
+            document.getElementById('gpu-limit').textContent = '≤ ' + pct + '%';
+        }
+    </script>
+</body>
+</html>

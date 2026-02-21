@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=VoxelForge
+Comment=3D data to Minecraft block converter
+Exec=voxelforge
+Icon=voxelforge
+Terminal=false
+Type=Application
+Categories=Graphics;3DGraphics;Game;
+Keywords=minecraft;voxel;3d;converter;litematic;schematic;
+StartupWMClass=VoxelForge

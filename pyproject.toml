@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "VoxelForge"
+version = "0.1.0"
+description = "多源 3D 数据到 Minecraft 区块文件的 GPU 加速转换平台"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "VoxelForge Team"}
+]
+
+dependencies = [
+    # === GPU 计算 ===
+    "taichi>=1.7.0",
+
+    # === GUI ===
+    "PySide6>=6.6",
+    "pyvistaqt>=0.11",
+    "pyvista>=0.43",
+
+    # === 网格 / 点云处理 ===
+    "trimesh[easy]>=4.0",
+    "open3d>=0.18",
+    "Pillow>=10.0",
+
+    # === MC 格式 ===
+    "amulet-core>=1.9",
+    "litemapy>=0.8",
+    "nbtlib>=2.0",
+
+    # === 科学计算 ===
+    "numpy>=1.24",
+    "scipy>=1.11",
+    "scikit-learn>=1.3",
+
+    # === 实用工具 ===
+    "psutil>=5.9",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-qt>=4.2",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+voxelforge = "main:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
