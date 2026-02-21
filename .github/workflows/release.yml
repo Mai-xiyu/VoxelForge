@@ -174,10 +174,10 @@ jobs:
           # 修复补丁：针对 amulet-rocksdb 1.0.1 源码中错误的 CMake 4.1 版本检查
           # 1. 下载源码 2. 解压 3. 强制修改要求 4. 本地安装
           pip download amulet-rocksdb==1.0.1
-          tar -xzvf amulet-rocksdb-1.0.1.tar.gz
-          sed -i 's/cmake_minimum_required(VERSION 4.1)/cmake_minimum_required(VERSION 3.10)/g' amulet-rocksdb-1.0.1/CMakeLists.txt
-          pip install ./amulet-rocksdb-1.0.1
-          rm -rf amulet-rocksdb-1.0.1*
+          tar -xzvf amulet_rocksdb-1.0.1.tar.gz
+          sed -i 's/cmake_minimum_required(VERSION 4.1)/cmake_minimum_required(VERSION 3.10)/g' amulet_rocksdb-1.0.1/CMakeLists.txt
+          pip install ./amulet_rocksdb-1.0.1
+          rm -rf amulet_rocksdb-1.0.1*
           
           # 安装剩余需求
           pip install -r requirements.txt
